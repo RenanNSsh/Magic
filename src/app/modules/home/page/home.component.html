@@ -1,0 +1,80 @@
+<div class="home-container">
+    <h1>CRUD GENERATOR</h1>
+    <p>Com essa funcionalidade é gerado um CRUD completo em Spring Boot, com a possibilidade de gerar integrado com aplicação Angular e Flutter!</p>
+    <h2>O que é gerado?</h2>
+    <div class="generated">
+        <div class="spring-boot">
+            <h3>Spring Boot:</h3>
+            <ul>
+                <li>Models</li>
+                <li>Services (com paginação e filtros múltiplos)</li>
+                <li>Repository</li>
+                <li>Controllers</li>
+            </ul>
+        </div>
+        <div class="angular-flutter">
+            <h3>Angular e Flutter</h3>
+            <ul>
+                <li>Models</li>
+                <li>Services (com paginação e filtros múltiplos)</li>
+            </ul>
+        </div>
+    </div>
+    <h2>
+        Escolha o modo de geração:
+    </h2>
+    <div class="generate-buttons">
+        <button mat-flat-button color="primary" (click)="toggleJsonMode()">JSON</button>
+        <button mat-flat-button color="primary">Formulário</button>
+    </div>
+    <div class="generate-json" *ngIf="jsonMode">
+        <div class="form">
+
+            <div class="form-generate-json">
+                <mat-form-field appearance="fill">
+                    <mat-label>Nome</mat-label>
+                    <input matInput [(ngModel)]="entityName">
+                </mat-form-field>
+                <mat-form-field appearance="fill">
+                    <mat-label>JSON Model</mat-label>
+                    <textarea matInput [(ngModel)]="entityJson"></textarea>
+                </mat-form-field>
+                <button mat-flat-button (click)="generateJson()"><mat-icon>add</mat-icon> Adicionar</button>
+                
+            </div>
+            <div class="generated-json">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Entidade
+                            </th>
+                            <th>
+                                Ações
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let entity of entities;">
+                            <td>
+                                {{entity.name}}
+                            </td>
+                            <td>
+                                <button mat-icon-button (click)="removeEntity(entity)">
+                                    <mat-icon>
+                                        delete
+                                    </mat-icon>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+            <div class="generate-button">
+                <button mat-flat-button color="primary">Gerar</button>
+                
+            </div>
+        </div>
+</div>
+
