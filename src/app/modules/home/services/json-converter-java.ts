@@ -10,7 +10,7 @@ export class JsonConverterJava{
         let textjson = input.toString();
         try {
             const convert = JSON.parse(textjson);
-            let classes = this.createClasses(convert, `${name}Model`, this.indentation);
+            let classes = this.createClasses(convert, `${name}`, this.indentation);
             return classes;
         } catch (e) {
             return 'Error : \n' + e;
