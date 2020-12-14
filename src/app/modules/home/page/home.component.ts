@@ -12,6 +12,7 @@ export class HomeComponent implements OnInit {
   formMode = false;
   entityName = '';
   entityJson = '';
+  entityBasePackage = 'br.com.exception';
   entities = [];
 
   constructor(private jsonConverter: JsonConverterService) { }
@@ -24,12 +25,13 @@ export class HomeComponent implements OnInit {
   }
 
   generateJson(){
-    const classConverted = this.jsonConverter.toJava(this.entityJson, this.entityName);
+    const classConverted = this.jsonConverter.toJava(this.entityJson, this.entityName, this.entityBasePackage);
     this.entities.push({
       name: this.entityName
     })
     this.entityName = '';
     this.entityJson = '';
+    this.entityBasePackage = 'br.com.exception';
   }
 
   removeEntity(entity){
