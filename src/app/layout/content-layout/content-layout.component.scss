@@ -1,3 +1,27 @@
 .container{
-    min-height: 80vh;
+    min-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    ::ng-deep > router-outlet + * {
+        flex-grow: 1;
+    }
+    > magic-footer{
+        flex-grow: 0;
+    }
+}
+
+.mat-app-background{
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 10vh;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+magic-header{
+    position: fixed;
+    top: 0;
 }
