@@ -1,85 +1,225 @@
 <div class="home-container">
-    <h1>CRUD GENERATOR</h1>
-    <p>Com essa funcionalidade é gerado um CRUD completo em Spring Boot, com a possibilidade de gerar integrado com aplicação Angular e Flutter!</p>
-    <h2>O que é gerado?</h2>
-    <div class="generated">
-        <div class="spring-boot">
-            <h3>Spring Boot:</h3>
-            <ul>
-                <li>Models</li>
-                <li>Services (com paginação e filtros múltiplos)</li>
-                <li>Repository</li>
-                <li>Controllers</li>
-            </ul>
-        </div>
-        <div class="angular-flutter">
-            <h3>Angular e Flutter</h3>
-            <ul>
-                <li>Models</li>
-                <li>Services (com paginação e filtros múltiplos)</li>
-            </ul>
-        </div>
-    </div>
-    <h2>
-        Escolha o modo de geração:
-    </h2>
-    <div class="generate-buttons">
-        <button mat-flat-button color="primary" (click)="toggleJsonMode()">JSON</button>
-        <button mat-flat-button color="primary">Formulário</button>
-    </div>
-    <div class="generate-json" *ngIf="jsonMode">
-        <div class="form">
-
-            <div class="form-generate-json">
-                <mat-form-field appearance="fill">
-                    <mat-label>Nome</mat-label>
-                    <input matInput [(ngModel)]="entityName">
-                </mat-form-field>
-                <mat-form-field appearance="fill">
-                    <mat-label>Pacote Base</mat-label>
-                    <input matInput [(ngModel)]="entityBasePackage">
-                </mat-form-field>
-                
-                <mat-form-field appearance="fill">
-                    <mat-label>JSON Model</mat-label>
-                    <textarea matInput [(ngModel)]="entityJson"></textarea>
-                </mat-form-field>
-                <button mat-flat-button (click)="generateJson()"><mat-icon>add</mat-icon> Adicionar</button>
-                
+    <div class="left-container">
+        <h1 class="text-title main-title">CRUD GENERATOR</h1>
+        <p>Com essa funcionalidade é gerado um CRUD completo em Spring Boot, com a possibilidade de gerar integrado com
+            aplicação Angular e Flutter!</p>
+        <h2 class="text-title">O que é gerado?</h2>
+        <div class="generated">
+            <div class="spring-boot">
+                <h3>Spring Boot:</h3>
+                <ul>
+                    <li>Models</li>
+                    <li>Services (com paginação e filtros múltiplos)</li>
+                    <li>Repository</li>
+                    <li>Controllers</li>
+                </ul>
             </div>
-            <div class="generated-json">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>
-                                Entidade
-                            </th>
-                            <th>
-                                Ações
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let entity of entities;">
-                            <td>
-                                {{entity.name}}
-                            </td>
-                            <td>
-                                <button mat-icon-button (click)="removeEntity(entity)">
+            <div class="angular-flutter">
+                <h3>Angular e Flutter</h3>
+                <ul>
+                    <li>Models</li>
+                    <li>Services (com paginação e filtros múltiplos)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="right-container">
+
+        <h2>
+            Modo de geração
+        </h2>
+        <div class="generate-buttons">
+
+            <div class="container">
+                <div class="radio-tile-group">
+                    <div class="input-container">
+                        <input id="bike" class="radio-button" type="radio" name="radio" (click)="showJsonMode()" />
+                        <div class="radio-tile">
+                            <div class="icon json-icon">
+                                <svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg"
+                                    xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 58 58"
+                                    style="enable-background:new 0 0 58 58;" xml:space="preserve">
+                                    <g>
+                                        <path
+                                            d="M50.949,12.187l-1.361-1.361l-9.504-9.505c-0.001-0.001-0.001-0.001-0.002-0.001l-0.77-0.771
+          C38.957,0.195,38.486,0,37.985,0H8.963C7.776,0,6.5,0.916,6.5,2.926V39v16.537V56c0,0.837,0.841,1.652,1.836,1.909
+          c0.051,0.014,0.1,0.033,0.152,0.043C8.644,57.983,8.803,58,8.963,58h40.074c0.16,0,0.319-0.017,0.475-0.048
+          c0.052-0.01,0.101-0.029,0.152-0.043C50.659,57.652,51.5,56.837,51.5,56v-0.463V39V13.978C51.5,13.211,51.407,12.644,50.949,12.187
+          z M39.5,3.565L47.935,12H39.5V3.565z M8.963,56c-0.071,0-0.135-0.025-0.198-0.049C8.61,55.877,8.5,55.721,8.5,55.537V41h41v14.537
+          c0,0.184-0.11,0.34-0.265,0.414C49.172,55.975,49.108,56,49.037,56H8.963z M8.5,39V2.926C8.5,2.709,8.533,2,8.963,2h28.595
+          C37.525,2.126,37.5,2.256,37.5,2.391V13.78c-0.532-0.48-1.229-0.78-2-0.78c-0.553,0-1,0.448-1,1s0.447,1,1,1c0.552,0,1,0.449,1,1v4
+          c0,1.2,0.542,2.266,1.382,3c-0.84,0.734-1.382,1.8-1.382,3v4c0,0.551-0.448,1-1,1c-0.553,0-1,0.448-1,1s0.447,1,1,1
+          c1.654,0,3-1.346,3-3v-4c0-1.103,0.897-2,2-2c0.553,0,1-0.448,1-1s-0.447-1-1-1c-1.103,0-2-0.897-2-2v-4
+          c0-0.771-0.301-1.468-0.78-2h11.389c0.135,0,0.265-0.025,0.391-0.058c0,0.015,0.001,0.021,0.001,0.036V39H8.5z" />
+                                        <path d="M16.354,51.43c-0.019,0.446-0.171,0.764-0.458,0.95s-0.672,0.28-1.155,0.28c-0.191,0-0.396-0.022-0.615-0.068
+          s-0.429-0.098-0.629-0.157s-0.385-0.123-0.554-0.191s-0.299-0.135-0.39-0.198l-0.697,1.107c0.183,0.137,0.405,0.26,0.67,0.369
+          s0.54,0.207,0.827,0.294s0.565,0.15,0.834,0.191s0.504,0.062,0.704,0.062c0.401,0,0.791-0.039,1.169-0.116
+          c0.378-0.077,0.713-0.214,1.005-0.41s0.524-0.456,0.697-0.779s0.26-0.723,0.26-1.196v-7.848h-1.668V51.43z" />
+                                        <path
+                                            d="M25.083,49.064c-0.314-0.228-0.654-0.422-1.019-0.581s-0.702-0.323-1.012-0.492s-0.569-0.364-0.779-0.588
+          s-0.314-0.518-0.314-0.882c0-0.146,0.036-0.299,0.109-0.458s0.173-0.303,0.301-0.431s0.273-0.234,0.438-0.321
+          s0.337-0.139,0.52-0.157c0.328-0.027,0.597-0.032,0.807-0.014s0.378,0.05,0.506,0.096s0.226,0.091,0.294,0.137
+          s0.13,0.082,0.185,0.109c0.009-0.009,0.036-0.055,0.082-0.137s0.101-0.185,0.164-0.308s0.132-0.255,0.205-0.396
+          s0.137-0.271,0.191-0.39c-0.265-0.173-0.61-0.299-1.039-0.376s-0.853-0.116-1.271-0.116c-0.41,0-0.8,0.063-1.169,0.191
+          s-0.692,0.313-0.971,0.554s-0.499,0.535-0.663,0.882S20.4,46.13,20.4,46.576c0,0.492,0.104,0.902,0.314,1.23
+          s0.474,0.613,0.793,0.854s0.661,0.451,1.025,0.629s0.704,0.355,1.019,0.533s0.576,0.376,0.786,0.595s0.314,0.483,0.314,0.793
+          c0,0.511-0.148,0.896-0.444,1.155s-0.723,0.39-1.278,0.39c-0.183,0-0.378-0.019-0.588-0.055s-0.419-0.084-0.629-0.144
+          s-0.412-0.123-0.608-0.191s-0.357-0.139-0.485-0.212l-0.287,1.176c0.155,0.137,0.34,0.253,0.554,0.349s0.439,0.171,0.677,0.226
+          c0.237,0.055,0.472,0.094,0.704,0.116s0.458,0.034,0.677,0.034c0.511,0,0.966-0.077,1.367-0.232s0.738-0.362,1.012-0.622
+          s0.485-0.561,0.636-0.902s0.226-0.695,0.226-1.06c0-0.538-0.104-0.978-0.314-1.319S25.397,49.292,25.083,49.064z" />
+                                        <path
+                                            d="M34.872,45.072c-0.378-0.429-0.82-0.754-1.326-0.978s-1.06-0.335-1.661-0.335s-1.155,0.111-1.661,0.335
+          s-0.948,0.549-1.326,0.978s-0.675,0.964-0.889,1.606s-0.321,1.388-0.321,2.235s0.107,1.595,0.321,2.242s0.511,1.185,0.889,1.613
+          s0.82,0.752,1.326,0.971s1.06,0.328,1.661,0.328s1.155-0.109,1.661-0.328s0.948-0.542,1.326-0.971s0.675-0.966,0.889-1.613
+          s0.321-1.395,0.321-2.242s-0.107-1.593-0.321-2.235S35.25,45.501,34.872,45.072z M34.195,50.698
+          c-0.137,0.487-0.326,0.882-0.567,1.183s-0.515,0.518-0.82,0.649s-0.627,0.198-0.964,0.198c-0.328,0-0.641-0.07-0.937-0.212
+          s-0.561-0.364-0.793-0.67s-0.415-0.699-0.547-1.183s-0.203-1.066-0.212-1.75c0.009-0.702,0.082-1.294,0.219-1.777
+          c0.137-0.483,0.326-0.877,0.567-1.183s0.515-0.521,0.82-0.649s0.627-0.191,0.964-0.191c0.328,0,0.641,0.068,0.937,0.205
+          s0.561,0.36,0.793,0.67s0.415,0.704,0.547,1.183s0.203,1.06,0.212,1.743C34.405,49.616,34.332,50.211,34.195,50.698z" />
+                                        <polygon points="44.012,50.869 40.061,43.924 38.393,43.924 38.393,54 40.061,54 40.061,47.055 44.012,54 45.68,54 45.68,43.924 
+          44.012,43.924 	" />
+                                        <path d="M20.5,20v-4c0-0.551,0.448-1,1-1c0.553,0,1-0.448,1-1s-0.447-1-1-1c-1.654,0-3,1.346-3,3v4c0,1.103-0.897,2-2,2
+          c-0.553,0-1,0.448-1,1s0.447,1,1,1c1.103,0,2,0.897,2,2v4c0,1.654,1.346,3,3,3c0.553,0,1-0.448,1-1s-0.447-1-1-1
+          c-0.552,0-1-0.449-1-1v-4c0-1.2-0.542-2.266-1.382-3C19.958,22.266,20.5,21.2,20.5,20z" />
+                                        <circle cx="28.5" cy="19.5" r="1.5" />
+                                        <path
+                                            d="M28.5,25c-0.553,0-1,0.448-1,1v3c0,0.552,0.447,1,1,1s1-0.448,1-1v-3C29.5,25.448,29.053,25,28.5,25z" />
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                    <g>
+                                    </g>
+                                </svg>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-container">
+                        <input id="drive" class="radio-button" type="radio" name="radio" (click)="showFormMode()"/>
+                        <div class="radio-tile">
+                            <div class="icon car-icon">
+                                <svg id="Capa_1" enable-background="new 0 0 511.998 511.998" height="512"
+                                    viewBox="0 0 511.998 511.998" width="512" xmlns="http://www.w3.org/2000/svg">
+                                    <g>
+                                        <path
+                                            d="m484.588 126.058h-23.378v-23.47c0-4.142-3.358-7.5-7.5-7.5h-3.257v-23.463c0-4.142-3.358-7.5-7.5-7.5h-30.967c-4.142 0-7.5 3.358-7.5 7.5v23.463h-3.256c-4.142 0-7.5 3.358-7.5 7.5v185.8c0 4.053 3.218 7.347 7.237 7.487v132.928c0 11.804 8.082 21.755 19.003 24.613v16.259c0 4.142 3.358 7.5 7.5 7.5s7.5-3.358 7.5-7.5v-16.259c10.921-2.858 19.003-12.809 19.003-24.613v-132.928c4.019-.14 7.237-3.433 7.237-7.487v-25.62c0-4.142-3.358-7.5-7.5-7.5s-7.5 3.358-7.5 7.5v18.12h-37.48v-108.864h37.48v58.054c0 4.142 3.358 7.5 7.5 7.5s7.5-3.358 7.5-7.5v-58.054h15.878v38.95c0 4.142 3.358 7.5 7.5 7.5s7.5-3.358 7.5-7.5v-77.417c0-4.141-3.358-7.499-7.5-7.499zm-65.101-46.933h15.967v15.963h-15.967zm-3.52 310.149v-93.383h23.006v93.383zm12.565 49.969h-2.125c-5.757 0-10.44-4.684-10.44-10.44v-24.529h23.006v24.529c0 5.757-4.684 10.44-10.441 10.44zm-19.802-329.155h37.48v15.97h-37.48zm.003 30.97h68.355v15.967h-68.355z" />
+                                        <g>
+                                            <path
+                                                d="m369.09 31.058h-147.807v-8.027c0-12.7-10.332-23.031-23.031-23.031s-23.031 10.332-23.031 23.031v8.027h-147.811c-4.142 0-7.5 3.358-7.5 7.5v465.94c0 4.142 3.358 7.5 7.5 7.5h66.79c4.142 0 7.5-3.358 7.5-7.5s-3.358-7.5-7.5-7.5h-59.29v-450.94h68.137v16.07h-44.577c-4.142 0-7.5 3.358-7.5 7.5v403.81c0 4.142 3.358 7.5 7.5 7.5h279.56c4.142 0 7.5-3.358 7.5-7.5v-323.54c0-4.142-3.358-7.5-7.5-7.5s-7.5 3.358-7.5 7.5v316.04h-264.56v-388.81h37.077v2.077c0 4.142 3.358 7.5 7.5 7.5h175.41c4.142 0 7.5-3.358 7.5-7.5v-2.077h37.073v40.09c0 4.142 3.358 7.5 7.5 7.5s7.5-3.358 7.5-7.5v-47.59c0-4.142-3.358-7.5-7.5-7.5h-44.573v-16.07h68.133v450.94h-234.7c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5h242.2c4.142 0 7.5-3.358 7.5-7.5v-465.94c0-4.142-3.358-7.5-7.5-7.5zm-178.869-8.027c0-4.428 3.603-8.031 8.031-8.031s8.031 3.603 8.031 8.031v8.027h-16.063v-8.027zm88.236 48.674h-160.41v-25.642h160.41z" />
+                                            <g>
+                                                <g>
+                                                    <path
+                                                        d="m168.487 204.758c-3.84-2.868-5.782-7.502-4.972-12.226l3.142-18.322-13.312-12.976c-3.432-3.345-4.644-8.255-3.163-12.813 1.481-4.559 5.348-7.818 10.091-8.507l18.396-2.673 8.228-16.67c2.121-4.298 6.416-6.968 11.209-6.968s9.088 2.67 11.209 6.968l8.227 16.669 18.396 2.673c4.743.688 8.609 3.948 10.09 8.506 1.481 4.559.27 9.469-3.163 12.814l-13.312 12.976 3.143 18.322c.81 4.725-1.096 9.409-4.973 12.226-3.878 2.817-8.923 3.181-13.164.952l-16.455-8.651-16.454 8.651c-4.16 1.956-9.16 2.039-13.163-.951zm35.435-21.587 13.134 6.905-2.508-14.625c-.696-4.056.648-8.192 3.595-11.064l10.625-10.357-14.684-2.134c-4.072-.592-7.59-3.148-9.412-6.838l-6.567-13.306-6.567 13.306c-1.819 3.688-5.338 6.246-9.411 6.838l-14.685 2.134 10.625 10.357c2.947 2.873 4.291 7.009 3.595 11.065l-2.508 14.624 13.134-6.905c4.119-2.173 8.119-1.923 11.634 0z" />
+                                                </g>
+                                                <g>
+                                                    <path
+                                                        d="m285.957 248.436h-175.41c-4.142 0-7.5-3.358-7.5-7.5s3.358-7.5 7.5-7.5h175.41c4.142 0 7.5 3.358 7.5 7.5s-3.358 7.5-7.5 7.5z" />
+                                                </g>
+                                                <g>
+                                                    <path
+                                                        d="m285.957 279.498h-175.41c-4.142 0-7.5-3.358-7.5-7.5s3.358-7.5 7.5-7.5h175.41c4.142 0 7.5 3.358 7.5 7.5s-3.358 7.5-7.5 7.5z" />
+                                                </g>
+                                                <g>
+                                                    <path
+                                                        d="m285.957 310.56h-175.41c-4.142 0-7.5-3.358-7.5-7.5s3.358-7.5 7.5-7.5h175.41c4.142 0 7.5 3.358 7.5 7.5s-3.358 7.5-7.5 7.5z" />
+                                                </g>
+                                                <g>
+                                                    <path
+                                                        d="m285.957 341.623h-175.41c-4.142 0-7.5-3.358-7.5-7.5s3.358-7.5 7.5-7.5h175.41c4.142 0 7.5 3.358 7.5 7.5s-3.358 7.5-7.5 7.5z" />
+                                                </g>
+                                                <g>
+                                                    <path
+                                                        d="m284.333 433.809h-58.47c-4.142 0-7.5-3.358-7.5-7.5s3.358-7.5 7.5-7.5h58.47c4.142 0 7.5 3.358 7.5 7.5s-3.358 7.5-7.5 7.5z" />
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </svg>
+                            </div>
+                            <label for="drive" class="radio-tile-label">Formulário</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="generate-json" *ngIf="jsonMode">
+            <div class="form">
+
+                <div class="form-generate-json">
+                    <mat-form-field appearance="fill">
+                        <mat-label>Nome</mat-label>
+                        <input matInput [(ngModel)]="entityName">
+                    </mat-form-field>
+                    <mat-form-field appearance="fill">
+                        <mat-label>Pacote Base</mat-label>
+                        <input matInput [(ngModel)]="entityBasePackage">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="fill">
+                        <mat-label>JSON Model</mat-label>
+                        <textarea matInput [(ngModel)]="entityJson" cdkTextareaAutosize rows="3"></textarea>
+                    </mat-form-field>
+                    <button mat-stroked-button (click)="addJson()">
+                        <mat-icon>add</mat-icon> Adicionar
+                    </button>
+
+                </div>
+                <div class="generated-json">
+                    <table mat-table [dataSource]="entities" class="mat-elevation-z8">
+                        <ng-container matColumnDef="entity">
+                            <th mat-header-cell *matHeaderCellDef> Entidade </th>
+                            <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+                        </ng-container>
+
+                        <!-- Name Column -->
+                        <ng-container matColumnDef="actions">
+                            <th mat-header-cell *matHeaderCellDef> Ações </th>
+                            <td mat-cell *matCellDef="let element">
+                                <button mat-icon-button (click)="removeEntity(element)">
                                     <mat-icon>
                                         delete
                                     </mat-icon>
                                 </button>
                             </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                </div>
             </div>
             <div class="generate-button">
-                <button mat-flat-button color="primary">Gerar</button>
-                
+                <button mat-stroked-button class="stroked-primary-reverse" color="primary"
+                    (click)="generateJson()">Gerar</button>
+
             </div>
         </div>
+    </div>
 </div>
-

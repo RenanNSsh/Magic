@@ -14,24 +14,39 @@ export class HomeComponent implements OnInit {
   entityJson = '';
   entityBasePackage = 'br.com.exception';
   entities = [];
+  displayedColumns: string[] = ['entity', 'actions'];
 
   constructor(private jsonConverter: JsonConverterService) { }
 
   ngOnInit(): void {
+  }
+  
+  showJsonMode(){
+    this.jsonMode = true;
+    this.formMode = false;
+  }
+  showFormMode(){
+    this.formMode = true;
+    this.jsonMode = false;
   }
 
   toggleJsonMode(){
     this.jsonMode = !this.jsonMode;
   }
 
-  generateJson(){
-    const classConverted = this.jsonConverter.toJava(this.entityJson, this.entityName, this.entityBasePackage);
-    this.entities.push({
-      name: this.entityName
-    })
+  addJson(){
+   this.entities =[...this.entities,{
+      name: this.entityName,
+      json: this.entityJson,
+      basePackage: this.entityBasePackage
+    }];
     this.entityName = '';
     this.entityJson = '';
     this.entityBasePackage = 'br.com.exception';
+  }
+
+  generateJson(){
+    this.jsonConverter.convert(this.entities);
   }
 
   removeEntity(entity){
