@@ -1,0 +1,20 @@
+<h1 mat-dialog-title>Relacionamento Entidade</h1>
+
+<div mat-dialog-content >
+  <p>Por favor informe o tipo de relacionamento para o(s) campo(s): </p>
+  <div class="field-relationship" *ngFor="let invalidField of data.invalidFields" >
+      <span>{{invalidField.label}}:</span>
+      <mat-form-field appearance="fill">
+        <mat-label>Relacionamento</mat-label>
+        <mat-select [(value)]="invalidField.relationship">
+          <mat-option *ngFor="let relationship of relationships" [value]="relationship.value">
+            {{relationship.viewValue}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="onResetClick()">Resetar</button>
+  <button mat-button [mat-dialog-close]="data.invalidFields" cdkFocusInitial>Confirmar</button>
+</div>

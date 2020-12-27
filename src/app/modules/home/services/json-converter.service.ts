@@ -27,7 +27,12 @@ export class JsonConverterService {
   toJava(json: string, name: string, basePackage: string, zip: JSZip){
     
     const javaZip = zip.folder('java')
-    const javaConverter = new JsonConverterJava();
-    javaConverter.generate(json, name, basePackage, javaZip);
+    this.generateJava(json, name, basePackage, javaZip)
+  }
+
+  generateJava(json: string, name: string, basePackage: string, zip: JSZip){
+    const javaConverter = new JsonConverterJava(this);
+    javaConverter.generate(json, name, basePackage, zip);
+
   }
 }

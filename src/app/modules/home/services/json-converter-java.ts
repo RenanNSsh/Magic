@@ -1,5 +1,6 @@
 import * as JSZip from 'jszip';
 import { JavaConverterClassType } from './java-converter-class-type.enum';
+import { JsonConverterService } from './json-converter.service';
 
 export class JsonConverterJava{
 
@@ -8,20 +9,24 @@ export class JsonConverterJava{
     private classesArray = [];
     private classObj = {};
 
-    private json_to_java(input: string, name, type: JavaConverterClassType, basePackage: string): string{
+    public constructor(private jsonConverter: JsonConverterService){
+
+    }
+
+    private json_to_java(input: string, name, type: JavaConverterClassType, basePackage: string, zip: JSZip): string{
         let textjson = input.toString();
         try {
             const convert = JSON.parse(textjson);
-            let classes = this.createClasses(convert, `${name}`, this.indentation, type, basePackage);
+            let classes = this.createClasses(convert, `${name}`, this.indentation, type, basePackage,zip);
             return classes;
         } catch (e) {
             return 'Error : \n' + e;
         }
     }
 
-    private createClasses(obj, startingLabel: string, indentation: string, type: JavaConverterClassType, basePackage: string): string {
+    private createClasses(obj, startingLabel: string, indentation: string, type: JavaConverterClassType, basePackage: string, zip: JSZip): string {
         this.classesArray = [];
-        this.createClass(obj, startingLabel, indentation,type, basePackage);
+        this.createClass(obj, startingLabel, indentation,type, basePackage, zip);
         return this.classesArray.reverse().join('\n');
     }
 
@@ -157,13 +162,13 @@ export class JsonConverterJava{
         return `\n${this.generateControllerProperties(indentation,label, basepackage)}\n${this.generateControllerMethods(indentation,label,basepackage)}`;
     }
 
-    private createClass(obj, label, indentation, type: JavaConverterClassType, basePackage: string) {
+    private createClass(obj, label, indentation, type: JavaConverterClassType, basePackage: string, zip: JSZip) {
         
         const decorators = this.generateDecorators(type, label);
         let classText =  decorators + 'public' + ' ' + this.getFileType(type) + label + this.getInterfaceInheritance(type, label, basePackage) +' {\n';
         switch(type){
             case JavaConverterClassType.Model:
-                classText = classText + this.parser(obj, indentation,type, label,basePackage) + '\n}';
+                classText = classText + this.parser(obj, indentation,type, label,basePackage,zip) + '\n}';
                 break;
             case JavaConverterClassType.Service:
                 classText += this.serviceClassBody(indentation, label, basePackage) + '\n}';
@@ -177,7 +182,7 @@ export class JsonConverterJava{
         this.classesArray.push(classText);
     }
 
-    private parser(obj, indent, classType: JavaConverterClassType, label: string, basePackage: string) {
+    private parser(obj, indent, classType: JavaConverterClassType, label: string, basePackage: string, zip: JSZip) {
         let output = '';
         let className = '';
         if(classType == JavaConverterClassType.Model){
@@ -240,9 +245,9 @@ export class JsonConverterJava{
                         indent + 'this.' + keys[i] + ' = ' + keys[i] + ';\n' + indent + '}');
                     break;
                 default:
-                    if (obj[keys[i]] instanceof Array) {
+                    if (obj[keys[i]] instanceof Array) { //TODO: Corrigir Array aqui
                         output += 'ArrayList<Object> ' + keys[i] + ' = new ArrayList<Object>()' + ';\n';
-                    } else if (obj[keys[i]] == null || obj[keys[i]] == undefined) {
+                    } else if (obj[keys[i]] == null || obj[keys[i]] == undefined) { //TODO: Corrigir null / undefined
                         output += 'private String ' + keys[i] + ' = null';
                         output += ';\n';
                         getterMethods.push(indent + 'public String get' + keyNames[i] + '() {\n' + indent + indent + 'return ' + keys[i] +
@@ -250,14 +255,18 @@ export class JsonConverterJava{
                         setterMethods.push(indent + 'public void set' + keyNames[i] + '( String ' + keys[i] + ' ) {\n' + indent +
                             indent + 'this.' + keys[i] + ' = ' + keys[i] + ';\n' + indent + '}');
                     } else {
-                        this.classObj[keyNames[i]] = keyNames[i] + 'Object';
-                        output += keyNames[i] + ' ' + this.classObj[keyNames[i]] + ';\n'; // Don't change the order. CreateClass should be called at last.
-                        getterMethods.push(indent + 'public ' + keyNames[i] + ' get' + keyNames[i] + '() {\n' + indent + indent +
+                        this.classObj[keyNames[i]] = keyNames[i][0].toLowerCase() + keyNames[i].slice(1);
+                        this.packages += `import ${basePackage}.model.${keyNames[i]}Model;\n`;
+                        output += keyNames[i] + 'Model ' + this.classObj[keyNames[i]] + ';\n'; // Don't change the order. CreateClass should be called at last.
+                        getterMethods.push(indent + 'public ' + keyNames[i] + 'Model get' + keyNames[i] + '() {\n' + indent + indent +
                             'return ' + this.classObj[keyNames[i]] + ';\n' + indent + '}');
-                        setterMethods.push(indent + 'public void set' + keyNames[i] + '( ' + keyNames[i] + ' ' + keys[i] +
-                            'Object ) {\n' + indent + indent + 'this.' + this.classObj[keyNames[i]] + ' = ' + keys[i] + 'Object' + ';\n' +
+                        setterMethods.push(indent + 'public void set' + keyNames[i] + '( ' + keyNames[i] + 'Model ' + keys[i] +
+                            ' ) {\n' + indent + indent + 'this.' + this.classObj[keyNames[i]] + ' = ' + keys[i]  + ';\n' +
                             indent + '}');
-                        this.createClass(obj[keys[i]], keyNames[i], indent, classType,basePackage);
+                        
+                        this.jsonConverter.generateJava(JSON.stringify(obj[keys[i]]), keyNames[i], basePackage,zip);
+                        console.log(obj[keys[i]], keyNames[i], indent, classType,basePackage);
+                        // this.createClass(obj[keys[i]], keyNames[i], indent, classType,basePackage);
                     }
             }
         }
@@ -268,8 +277,8 @@ export class JsonConverterJava{
     }
     
 
-    private inernalJavaConverter(json, name, type: JavaConverterClassType, basePackage: string): string{
-        return this.json_to_java(json, name, type, basePackage);
+    private inernalJavaConverter(json, name, type: JavaConverterClassType, basePackage: string, zip: JSZip): string{
+        return this.json_to_java(json, name, type, basePackage,zip);
       }
 
     private generateModelPackages(basePackage: string){
@@ -322,49 +331,51 @@ export class JsonConverterJava{
     }
 
     private generateModel(json: string, name: string, basePackage: string, zip: JSZip){
-        
+        console.log(zip, json,name, basePackage)
         const folders = basePackage.replace(/\./g, '/');
         name = name[0].toUpperCase() + name.slice(1) + 'Model';
         const packageFolder = zip.folder(`${folders}/model`);
 
         this.generateModelPackages(basePackage);
-        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Model,basePackage);
+        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Model,basePackage,zip);
 
         packageFolder.file(`${name}.java`,`${this.packages}${entityConverted}`);
       }
     
       private generateController(json: string, name: string, basePackage: string, zip: JSZip){
-
+        console.log(zip, json,name, basePackage)
         const folders = basePackage.replace(/\./g, '/');             
         name = name[0].toUpperCase() + name.slice(1) + 'Controller';
 
         const packageFolder = zip.folder(`${folders}/controller`);
 
         this.generateControllerPackages(basePackage);
-        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Controller,basePackage);
+        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Controller,basePackage,zip);
 
         packageFolder.file(`${name}.java`,`${this.packages}${entityConverted}`);
       }
     
       private generateService(json: string, name: string, basePackage: string, zip: JSZip){
+        console.log(zip, json,name, basePackage)
         const folders = basePackage.replace(/\./g, '/');
         name = name[0].toUpperCase() + name.slice(1) + 'Service';
         const packageFolder = zip.folder(`${folders}/service`);
 
         this.generateServicePackages(basePackage);
-        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Service,basePackage);
+        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Service,basePackage,zip);
 
         packageFolder.file(`${name}.java`,`${this.packages}${entityConverted}`);
       }
     
       
       private generateRepository(json: string, name: string, basePackage: string, zip: JSZip){
+        console.log(zip, json,name, basePackage)
         const folders = basePackage.replace(/\./g, '/');
         name = name[0].toUpperCase() + name.slice(1) + 'Repository';
         const packageFolder = zip.folder(`${folders}/repository`);
 
         this.generateRepositoryPackages(basePackage);
-        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Repository,basePackage);
+        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Repository,basePackage,zip);
 
         packageFolder.file(`${name}.java`,`${this.packages}${entityConverted}`);
       }
