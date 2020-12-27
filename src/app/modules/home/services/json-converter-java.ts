@@ -250,7 +250,48 @@ export class JsonConverterJava{
                     break;
                 default:
                     if (obj[keys[i]] instanceof Array) { //TODO: Corrigir Array aqui
-                        output += 'ArrayList<Object> ' + keys[i] + ' = new ArrayList<Object>()' + ';\n';
+                        const arr =obj[keys[i]];
+                        const entityAlreadyCreated = this.entities.find(x => x.name && x.name.toLowerCase() == keys[i].toLowerCase());
+                        if(!!arr.length){
+                          
+                            const typeArr = this.getType(arr, keys[i]);
+                            output += this.getRelationshipAnnotation( keys[i],relationships,label);
+                            output += `private List<${typeArr}> ` + keys[i] + ';\n';
+                            getterMethods.push(indent + `public List<${typeArr}> get` + keyNames[i] + '() {\n' + indent + indent + 'return ' + keys[i] +
+                            ';\n' + indent + '}');
+                        setterMethods.push(indent + 'public void set' + keyNames[i] + `( List<${typeArr}> ` + keys[i] + ' ) {\n' + indent +
+                            indent + 'this.' + keys[i] + ' = ' + keys[i] + ';\n' + indent + '}');
+                            if(typeArr.includes('Model')){
+                                let labelField = label.replace('Model', '');
+                                console.log(this.getRelationshipAnnotation( keys[i],relationships,label));
+                                labelField = labelField[0].toLowerCase() + labelField.slice(1);
+                                const relationshipDestination = this.getDestinationRelationship();
+                                if(!entityAlreadyCreated){
+                                    const destinationObj = obj[keys[i]][0];
+                                    destinationObj[labelField] = {
+                                        id: 1
+                                    };
+                                    console.log(relationshipDestination)
+                                    this.jsonConverter.generateJava(JSON.stringify(destinationObj), keyNames[i], basePackage,[{label: labelField, relationship:relationshipDestination, isWeak: true }], zip,this.entities);
+                                }else{    
+                                    const objCreated = JSON.parse(entityAlreadyCreated.json);
+                                    if(relationshipDestination === RelationshipJSON.OneToMany || relationshipDestination === RelationshipJSON.OneToOne){
+                                        objCreated[labelField] = {
+                                            id: 1
+                                        }
+                                    }else{
+                                        objCreated[labelField] = [
+                                            {
+                                                id: 1
+                                            }
+                                        ]
+                                    }
+                                    entityAlreadyCreated.json = JSON.stringify(objCreated);
+                                    entityAlreadyCreated.relationships.push({label: labelField,relationship: relationshipDestination,isWeak: true});
+                                    this.jsonConverter.generateJava(entityAlreadyCreated.json, entityAlreadyCreated.name, entityAlreadyCreated.basePackage,entityAlreadyCreated.relationships, zip,this.entities);
+                                }
+                            }
+                        }
                     } else if (obj[keys[i]] == null || obj[keys[i]] == undefined) { //TODO: Corrigir null / undefined
                         output += 'private String ' + keys[i] + ' = null';
                         output += ';\n';
@@ -262,6 +303,7 @@ export class JsonConverterJava{
                         this.classObj[keyNames[i]] = keyNames[i][0].toLowerCase() + keyNames[i].slice(1);
                         this.packages += `import ${basePackage}.model.${keyNames[i]}Model;\n`;
                         output += this.getRelationshipAnnotation(this.classObj[keyNames[i]],relationships,label);
+                        console.log(this.getRelationshipAnnotation(this.classObj[keyNames[i]],relationships,label));
                         output += keyNames[i] + 'Model ' + this.classObj[keyNames[i]] + ';\n'; // Don't change the order. CreateClass should be called at last.
                         getterMethods.push(indent + 'public ' + keyNames[i] + 'Model get' + keyNames[i] + '() {\n' + indent + indent +
                             'return ' + this.classObj[keyNames[i]] + ';\n' + indent + '}');
@@ -271,7 +313,7 @@ export class JsonConverterJava{
                         
                         let labelField = label.replace('Model', '');
                         labelField = labelField[0].toLowerCase() + labelField.slice(1);
-                        const indexEntityAlreadyCreated = this.entities.findIndex(entity => relationships.some(relationship => relationship.label.toLowerCase() == entity.name.toLowerCase()));
+                        const indexEntityAlreadyCreated = this.entities.findIndex(entity => relationships.some(relationship =>entity && relationship.label.toLowerCase() == entity.name.toLowerCase()));
                         const entityAlreadyCreated = this.entities[indexEntityAlreadyCreated];
                         const relationshipDestination = this.getDestinationRelationship();
                         if(!entityAlreadyCreated){
@@ -313,6 +355,23 @@ export class JsonConverterJava{
         return output;
     }
 
+    getType(array: any[],entityName: string): string{
+        switch(typeof array[0]){
+            case 'string':
+                return 'String';
+            case 'boolean':
+                return 'Boolean';
+            case 'number':
+                if(array[0].toString().includes('.')){
+                    return 'Double';
+                }
+                return 'Integer';
+            case 'object':
+                return `${entityName[0].toUpperCase() + entityName.slice(1) + 'Model'}`;
+                
+        }
+    }
+
     getDestinationRelationship(){
         if(this.currentRelationship === RelationshipJSON.OneToMany){
             return RelationshipJSON.ManyToOne;
@@ -320,13 +379,14 @@ export class JsonConverterJava{
         if(this.currentRelationship === RelationshipJSON.ManyToOne){
             return RelationshipJSON.OneToMany;
         }
+        console.log(this.currentRelationship);
         return this.currentRelationship;
     }
 
     getRelationshipAnnotation(fieldName: string, relationships: RelationshipField[],className: string ): string{
-        
+        console.log(relationships);
         for(let relationship of relationships){
-            if(fieldName.toLowerCase() === relationship.label.toLowerCase()){
+            if(!!relationship.label && !!fieldName && fieldName.toLowerCase() === relationship.label.toLowerCase()){
                 this.currentRelationship = relationship.relationship;
                 return this.getRelationshipString(relationship,className);
             }
@@ -339,6 +399,7 @@ export class JsonConverterJava{
         const classField = className[0].toLowerCase() + className.slice(1);
         const classIdColumn = 'id_'+relationshipField.label.replace(/([a-zA-Z])(?=[A-Z])/g, '$1_');
         const relationship = relationshipField.relationship;
+        console.log(relationshipField);
         switch(relationship){
             case RelationshipJSON.OneToOne:
                 return `@OneToOne${relationshipField.isWeak ? '' : `(mappedBy = "${classField}",cascade=CascadeType.ALL)`}\n${this.indentation}` + 
@@ -347,7 +408,7 @@ export class JsonConverterJava{
                 return `@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)\n${this.indentation}`;
             case RelationshipJSON.ManyToOne:
                 return '@ManyToOne\n' +
-                       `@JoinColumn(name="${classIdColumn}")\n${this.indentation}`;
+                       `${this.indentation}@JoinColumn(name="${classIdColumn}")\n${this.indentation}`;
             case RelationshipJSON.OneToMany:
                 return `@OneToMany(mappedBy="${className.toLowerCase()}")\n${this.indentation}`
                        
@@ -457,6 +518,7 @@ export class JsonConverterJava{
 
     generate(json: string, name: string, basePackage: string,relationships: RelationshipField[], zip: JSZip,entities: EntityConvert[]){
         this.entities = entities;
+        this.currentRelationship = null;
         this.generateModel(json, name, basePackage,relationships, zip);
         this.generateService(json, name, basePackage, zip);
         this.generateController(json, name, basePackage, zip);
