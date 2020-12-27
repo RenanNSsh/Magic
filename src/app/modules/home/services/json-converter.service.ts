@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import * as JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { JsonConverterJava } from './json-converter-java';
+import { EntityConvert } from '../models/entity-convert';
+import { RelationshipField } from '../models/relationship';
 
 
 @Injectable({
@@ -12,10 +14,10 @@ export class JsonConverterService {
   constructor() { }
 
   
-  convert(entities: any[]){
+  convert(entities: EntityConvert[]){
     const zip = new JSZip();
     entities.forEach(entity => {
-      const classConverted = this.toJava(entity.json, entity.name, entity.basePackage, zip);    
+      const classConverted = this.toJava(entity.json, entity.name, entity.basePackage,entity.relationships, zip,entities);    
     });
 
     zip.generateAsync({type:"blob"})
@@ -24,15 +26,15 @@ export class JsonConverterService {
        });
   }
 
-  toJava(json: string, name: string, basePackage: string, zip: JSZip){
+  toJava(json: string, name: string, basePackage: string,relationships: RelationshipField[], zip: JSZip,entities: EntityConvert[]){
     
     const javaZip = zip.folder('java')
-    this.generateJava(json, name, basePackage, javaZip)
+    this.generateJava(json, name, basePackage,relationships, javaZip,entities)
   }
 
-  generateJava(json: string, name: string, basePackage: string, zip: JSZip){
+  generateJava(json: string, name: string, basePackage: string,relationships: RelationshipField[], zip: JSZip,entities: EntityConvert[]){
     const javaConverter = new JsonConverterJava(this);
-    javaConverter.generate(json, name, basePackage, zip);
+    javaConverter.generate(json, name, basePackage,relationships, zip,entities);
 
   }
 }

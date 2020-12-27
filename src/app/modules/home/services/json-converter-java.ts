@@ -1,4 +1,6 @@
 import * as JSZip from 'jszip';
+import { EntityConvert } from '../models/entity-convert';
+import { RelationshipField, RelationshipJSON } from '../models/relationship';
 import { JavaConverterClassType } from './java-converter-class-type.enum';
 import { JsonConverterService } from './json-converter.service';
 
@@ -8,25 +10,27 @@ export class JsonConverterJava{
     private packages = '';
     private classesArray = [];
     private classObj = {};
+    private entities: EntityConvert[] = [];
+    private currentRelationship: RelationshipJSON;
 
     public constructor(private jsonConverter: JsonConverterService){
 
     }
 
-    private json_to_java(input: string, name, type: JavaConverterClassType, basePackage: string, zip: JSZip): string{
+    private json_to_java(input: string, name, type: JavaConverterClassType, basePackage: string, zip: JSZip, relationships: RelationshipField[] = null): string{
         let textjson = input.toString();
         try {
             const convert = JSON.parse(textjson);
-            let classes = this.createClasses(convert, `${name}`, this.indentation, type, basePackage,zip);
+            let classes = this.createClasses(convert, `${name}`, this.indentation, type, basePackage,zip,relationships);
             return classes;
         } catch (e) {
             return 'Error : \n' + e;
         }
     }
 
-    private createClasses(obj, startingLabel: string, indentation: string, type: JavaConverterClassType, basePackage: string, zip: JSZip): string {
+    private createClasses(obj, startingLabel: string, indentation: string, type: JavaConverterClassType, basePackage: string, zip: JSZip, relationships:RelationshipField[] = null): string {
         this.classesArray = [];
-        this.createClass(obj, startingLabel, indentation,type, basePackage, zip);
+        this.createClass(obj, startingLabel, indentation,type, basePackage, zip,relationships);
         return this.classesArray.reverse().join('\n');
     }
 
@@ -162,13 +166,13 @@ export class JsonConverterJava{
         return `\n${this.generateControllerProperties(indentation,label, basepackage)}\n${this.generateControllerMethods(indentation,label,basepackage)}`;
     }
 
-    private createClass(obj, label, indentation, type: JavaConverterClassType, basePackage: string, zip: JSZip) {
+    private createClass(obj, label, indentation, type: JavaConverterClassType, basePackage: string, zip: JSZip, relationships:RelationshipField[] = null) {
         
         const decorators = this.generateDecorators(type, label);
         let classText =  decorators + 'public' + ' ' + this.getFileType(type) + label + this.getInterfaceInheritance(type, label, basePackage) +' {\n';
         switch(type){
             case JavaConverterClassType.Model:
-                classText = classText + this.parser(obj, indentation,type, label,basePackage,zip) + '\n}';
+                classText = classText + this.parser(obj, indentation,type, label,basePackage,zip,relationships) + '\n}';
                 break;
             case JavaConverterClassType.Service:
                 classText += this.serviceClassBody(indentation, label, basePackage) + '\n}';
@@ -182,7 +186,7 @@ export class JsonConverterJava{
         this.classesArray.push(classText);
     }
 
-    private parser(obj, indent, classType: JavaConverterClassType, label: string, basePackage: string, zip: JSZip) {
+    private parser(obj, indent, classType: JavaConverterClassType, label: string, basePackage: string, zip: JSZip, relationships:RelationshipField[] = null) {
         let output = '';
         let className = '';
         if(classType == JavaConverterClassType.Model){
@@ -257,6 +261,7 @@ export class JsonConverterJava{
                     } else {
                         this.classObj[keyNames[i]] = keyNames[i][0].toLowerCase() + keyNames[i].slice(1);
                         this.packages += `import ${basePackage}.model.${keyNames[i]}Model;\n`;
+                        output += this.getRelationshipAnnotation(this.classObj[keyNames[i]],relationships,label);
                         output += keyNames[i] + 'Model ' + this.classObj[keyNames[i]] + ';\n'; // Don't change the order. CreateClass should be called at last.
                         getterMethods.push(indent + 'public ' + keyNames[i] + 'Model get' + keyNames[i] + '() {\n' + indent + indent +
                             'return ' + this.classObj[keyNames[i]] + ';\n' + indent + '}');
@@ -264,10 +269,42 @@ export class JsonConverterJava{
                             ' ) {\n' + indent + indent + 'this.' + this.classObj[keyNames[i]] + ' = ' + keys[i]  + ';\n' +
                             indent + '}');
                         
-                        this.jsonConverter.generateJava(JSON.stringify(obj[keys[i]]), keyNames[i], basePackage,zip);
-                        console.log(obj[keys[i]], keyNames[i], indent, classType,basePackage);
+                        let labelField = label.replace('Model', '');
+                        labelField = labelField[0].toLowerCase() + labelField.slice(1);
+                        const indexEntityAlreadyCreated = this.entities.findIndex(entity => relationships.some(relationship => relationship.label.toLowerCase() == entity.name.toLowerCase()));
+                        const entityAlreadyCreated = this.entities[indexEntityAlreadyCreated];
+                        const relationshipDestination = this.getDestinationRelationship();
+                        if(!entityAlreadyCreated){
+                            const destinationObj = obj[keys[i]];
+                            destinationObj[labelField] = {
+                                id: 1
+                            };
+                            this.jsonConverter.generateJava(JSON.stringify(destinationObj), keyNames[i], basePackage,[{label: labelField, relationship:relationshipDestination, isWeak: true }], zip,this.entities);
+                        }else{
+                            const objCreated = JSON.parse(entityAlreadyCreated.json);
+                            console.log(objCreated);
+                            if(!objCreated[labelField]){
+                                if(relationshipDestination === RelationshipJSON.OneToMany || relationshipDestination === RelationshipJSON.OneToOne){
+                                    objCreated[labelField] = {
+                                        id: 1
+                                    }
+                                }else{
+                                    objCreated[labelField] = [
+                                        {
+                                            id: 1
+                                        }
+                                    ]
+                                }
+                                entityAlreadyCreated.json = JSON.stringify(objCreated);
+                                entityAlreadyCreated.relationships.push({label: labelField,relationship: relationshipDestination,isWeak: true});
+                                this.jsonConverter.generateJava(entityAlreadyCreated.json, entityAlreadyCreated.name, entityAlreadyCreated.basePackage,entityAlreadyCreated.relationships, zip,this.entities);
+                       
+                            }
+                            
+                        }
                         // this.createClass(obj[keys[i]], keyNames[i], indent, classType,basePackage);
                     }
+
             }
         }
         output += `\n${indent}public ${label}() {\n\n${indent}}`
@@ -275,10 +312,50 @@ export class JsonConverterJava{
             setterMethods.join('\n\n');
         return output;
     }
-    
 
-    private inernalJavaConverter(json, name, type: JavaConverterClassType, basePackage: string, zip: JSZip): string{
-        return this.json_to_java(json, name, type, basePackage,zip);
+    getDestinationRelationship(){
+        if(this.currentRelationship === RelationshipJSON.OneToMany){
+            return RelationshipJSON.ManyToOne;
+        }
+        if(this.currentRelationship === RelationshipJSON.ManyToOne){
+            return RelationshipJSON.OneToMany;
+        }
+        return this.currentRelationship;
+    }
+
+    getRelationshipAnnotation(fieldName: string, relationships: RelationshipField[],className: string ): string{
+        
+        for(let relationship of relationships){
+            if(fieldName.toLowerCase() === relationship.label.toLowerCase()){
+                this.currentRelationship = relationship.relationship;
+                return this.getRelationshipString(relationship,className);
+            }
+        }
+        return '';
+    }
+
+    getRelationshipString(relationshipField: RelationshipField,className: string): string{
+        className = className.replace('Model', '');
+        const classField = className[0].toLowerCase() + className.slice(1);
+        const classIdColumn = 'id_'+relationshipField.label.replace(/([a-zA-Z])(?=[A-Z])/g, '$1_');
+        const relationship = relationshipField.relationship;
+        switch(relationship){
+            case RelationshipJSON.OneToOne:
+                return `@OneToOne${relationshipField.isWeak ? '' : `(mappedBy = "${classField}",cascade=CascadeType.ALL)`}\n${this.indentation}` + 
+                        `${relationshipField.isWeak ? `@MapsId\n${this.indentation}` :''}`;
+            case RelationshipJSON.ManyToMany:
+                return `@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)\n${this.indentation}`;
+            case RelationshipJSON.ManyToOne:
+                return '@ManyToOne\n' +
+                       `@JoinColumn(name="${classIdColumn}")\n${this.indentation}`;
+            case RelationshipJSON.OneToMany:
+                return `@OneToMany(mappedBy="${className.toLowerCase()}")\n${this.indentation}`
+                       
+        }
+    }
+
+    private inernalJavaConverter(json, name, type: JavaConverterClassType, basePackage: string, zip: JSZip, relationships: RelationshipField[] = null): string{
+        return this.json_to_java(json, name, type, basePackage,zip,relationships);
       }
 
     private generateModelPackages(basePackage: string){
@@ -330,20 +407,18 @@ export class JsonConverterJava{
                 'import org.springframework.data.repository.query.Param;\n\n';
     }
 
-    private generateModel(json: string, name: string, basePackage: string, zip: JSZip){
-        console.log(zip, json,name, basePackage)
+    private generateModel(json: string, name: string, basePackage: string,relationships: RelationshipField[], zip: JSZip){
         const folders = basePackage.replace(/\./g, '/');
         name = name[0].toUpperCase() + name.slice(1) + 'Model';
         const packageFolder = zip.folder(`${folders}/model`);
 
         this.generateModelPackages(basePackage);
-        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Model,basePackage,zip);
+        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Model,basePackage,zip,relationships);
 
         packageFolder.file(`${name}.java`,`${this.packages}${entityConverted}`);
       }
     
       private generateController(json: string, name: string, basePackage: string, zip: JSZip){
-        console.log(zip, json,name, basePackage)
         const folders = basePackage.replace(/\./g, '/');             
         name = name[0].toUpperCase() + name.slice(1) + 'Controller';
 
@@ -356,7 +431,6 @@ export class JsonConverterJava{
       }
     
       private generateService(json: string, name: string, basePackage: string, zip: JSZip){
-        console.log(zip, json,name, basePackage)
         const folders = basePackage.replace(/\./g, '/');
         name = name[0].toUpperCase() + name.slice(1) + 'Service';
         const packageFolder = zip.folder(`${folders}/service`);
@@ -369,7 +443,6 @@ export class JsonConverterJava{
     
       
       private generateRepository(json: string, name: string, basePackage: string, zip: JSZip){
-        console.log(zip, json,name, basePackage)
         const folders = basePackage.replace(/\./g, '/');
         name = name[0].toUpperCase() + name.slice(1) + 'Repository';
         const packageFolder = zip.folder(`${folders}/repository`);
@@ -382,8 +455,9 @@ export class JsonConverterJava{
     
 
 
-    generate(json: string, name: string, basePackage: string,zip: JSZip){
-        this.generateModel(json, name, basePackage, zip);
+    generate(json: string, name: string, basePackage: string,relationships: RelationshipField[], zip: JSZip,entities: EntityConvert[]){
+        this.entities = entities;
+        this.generateModel(json, name, basePackage,relationships, zip);
         this.generateService(json, name, basePackage, zip);
         this.generateController(json, name, basePackage, zip);
         this.generateRepository(json, name, basePackage, zip);

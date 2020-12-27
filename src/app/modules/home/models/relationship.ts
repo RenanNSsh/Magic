@@ -13,4 +13,5 @@ export enum RelationshipJSON{
 export interface RelationshipField{
     label: string;
     relationship: RelationshipJSON;
+    isWeak: boolean;
 }
