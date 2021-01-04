@@ -20,6 +20,7 @@ export class HomeComponent implements OnInit {
   entityName = '';
   entityJson = '';
   entityBasePackage = 'br.com.exception';
+  appName = '';
   entities: EntityConvert[] = [];
   displayedColumns: string[] = ['entity', 'actions'];
   invalidFields: string[] = [];
@@ -110,7 +111,8 @@ export class HomeComponent implements OnInit {
       name: this.entityName,
       json: this.entityJson,
       basePackage: this.entityBasePackage,
-      relationships: this.relationshipFields
+      relationships: this.relationshipFields,
+      appName: this.appName
     }];
     console.log(this.entities);
     this.resetEntity();

@@ -5,6 +5,7 @@ import { JsonConverterJava } from './json-converter-java';
 import { EntityConvert } from '../models/entity-convert';
 import { RelationshipField } from '../models/relationship';
 import { JsonConverterAngular } from './json-converter-angular';
+import { JsonConverterFlutter } from './json-converter-flutter';
 
 
 @Injectable({
@@ -20,6 +21,7 @@ export class JsonConverterService {
     entities.forEach(entity => {
       const classConverted = this.toJava(entity.json, entity.name, entity.basePackage,entity.relationships, zip,entities);    
       this.toAngular(entity, entities, zip);
+      this.toFlutter(entity, entities, zip,entity.appName);
     });
 
     zip.generateAsync({type:"blob"})
@@ -42,7 +44,16 @@ export class JsonConverterService {
   generateAngular(entity: EntityConvert, entities: EntityConvert[], zip: JSZip){
     const angularConverter = new JsonConverterAngular(this);
     angularConverter.generate(entity, entities,zip)
+  }
 
+  toFlutter(entity: EntityConvert, entities: EntityConvert[], zip: JSZip,appName: string){
+    const flutterZip = zip.folder('flutter')
+    this.generateFlutter(entity, entities,flutterZip,appName);
+  }
+
+  generateFlutter(entity: EntityConvert, entities: EntityConvert[], zip: JSZip, appName: string){
+    const flutterConverter = new JsonConverterFlutter(this);
+    flutterConverter.generate(entity, entities,zip,appName)
   }
 
   generateJava(json: string, name: string, basePackage: string,relationships: RelationshipField[], zip: JSZip,entities: EntityConvert[]){

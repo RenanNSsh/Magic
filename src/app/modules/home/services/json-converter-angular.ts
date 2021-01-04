@@ -82,6 +82,7 @@ export class JsonConverterAngular{
                     basePackage: this.entity.basePackage,
                     json: JSON.stringify(destObj),
                     name: property,
+                    appName: this.entity.appName,
                     relationships: []
                 }
                 this.jsonConverter.generateAngular(destinationEntity, [...this.entities, destinationEntity],this.zip);

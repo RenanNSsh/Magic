@@ -206,10 +206,17 @@
                         <mat-label>Nome</mat-label>
                         <input matInput [(ngModel)]="entityName">
                     </mat-form-field>
-                    <mat-form-field appearance="fill">
-                        <mat-label>Pacote Base</mat-label>
-                        <input matInput [(ngModel)]="entityBasePackage">
-                    </mat-form-field>
+                    <div class="packages">
+                        <mat-form-field appearance="fill">
+                            <mat-label>Pacote Base</mat-label>
+                            <input matInput [(ngModel)]="entityBasePackage">
+                        </mat-form-field>
+                        <mat-form-field appearance="fill">
+                            <mat-label>Nome do APP</mat-label>
+                            <input matInput [(ngModel)]="appName">
+                        </mat-form-field>
+                    </div>
+                    
 
                     <mat-form-field appearance="fill">
                         <mat-label>JSON Model</mat-label>
