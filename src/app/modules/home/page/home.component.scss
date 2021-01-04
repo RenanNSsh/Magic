@@ -38,6 +38,11 @@
             animation: slideInFromLeft 2s;
         }
     }
+    .tabs-how-to{
+      li{
+        animation: slideInFromLeft 1.5s;
+      }
+    }
     .generated-json{
         
         flex-grow: 1;
@@ -63,13 +68,17 @@
     .generate-json{
         .form{
             display: flex;
-            
+            animation: slideInForm .5s;
             padding-top: 2rem;
             .form-generate-json{
                 display: flex;
                 min-width: 35vw;
                 padding-right: 1rem;
                 flex-direction: column;
+                textarea{
+                  
+                  overflow: hidden;
+                }
             }
         }
         .generate-button{
@@ -197,6 +206,16 @@ h2.text-title{
     }
   }
 
+  @keyframes slideInForm {
+    0% {
+      transform: translateY(-20%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
   
 @keyframes slideInFromLeft {
     0% {

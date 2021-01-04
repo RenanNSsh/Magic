@@ -86,7 +86,7 @@ export class HomeComponent implements OnInit {
       return relationship;
 
     }catch(error){
-      console.log(error);
+      console.log(error); 
       return ValidadeJsonStatus.Invalidated;
     }
   }
