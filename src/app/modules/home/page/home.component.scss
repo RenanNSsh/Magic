@@ -75,10 +75,10 @@
               mat-form-field{
                 flex-grow: 1;
               }
-              >mat-form-field{
+              >mat-form-field:first-child{
                 margin-right: .5rem;
               }
-              >mat-form-field +mat-form-field{
+              >mat-form-field:first-child +mat-form-field{
                 margin-left: .5rem;
 
               }
