@@ -29,12 +29,14 @@ export class JsonConverterAngular{
 
         this.generateModelImports();
         const modelBody = this.generateModelBody();
+        const pageableBody = this.generatePageBody();
         this.generateExternalModels();
 
         const folder = 'models';
         const modelsFolder = this.zip.folder(folder);
         const fileModelName = this.name.replace(/([a-zA-Z])(?=[A-Z])/g, '$1-').toLowerCase();
         modelsFolder.file(`${fileModelName}.ts`,this.imports+modelBody);
+        modelsFolder.file(`page.ts`,pageableBody);
     }
 
     private generateService(){
@@ -58,7 +60,8 @@ export class JsonConverterAngular{
                        `import { Observable } from 'rxjs';\n\n` +
 
                        `import { environment } from 'src/environments/environment';\n` +
-                       `import { ${this.name} } from '../models/${fileModelName}'; \n\n`;
+                       `import { ${this.name} } from '../models/${fileModelName}'; \n` +
+                       `import { Page } from '../models/page'; \n\n`;
         
 
     }
@@ -104,6 +107,40 @@ export class JsonConverterAngular{
         return modelbody;
     }
 
+    generatePageBody(): string{
+        const {indentation} = this;
+        let pageBody = '\n';
+        pageBody += `export interface Page<T>{\n` +
+                     `${indentation} content: T[];\n` +
+                     `${indentation} pageable: Pageable;\n` +
+                     `${indentation} totalPages: number;\n` +
+                     `${indentation} last: boolean;\n` +
+                     `${indentation} totalElements: number;\n` +
+                     `${indentation} size: number;\n` +
+                     `${indentation} number: number;\n` +
+                     `${indentation} sort: Sort;\n` +
+                     `${indentation} numberOfElements: number;\n` +
+                     `${indentation} first: boolean;\n` +
+                     `${indentation} empty: boolean;\n` +
+                     '}\n\n';
+
+        pageBody +=`interface Pageable{\n` +
+                    `${indentation} sort: Sort;\n` +
+                    `${indentation} offset: number;\n` +
+                    `${indentation} pageSize: number;\n` +
+                    `${indentation} pageNumber: number;\n` +
+                    `${indentation} paged: boolean;\n` +
+                    `${indentation} unpaged: boolean;\n` +
+                    '}\n\n';
+                    
+        pageBody +=`interface Sort{\n` +
+                    `${indentation} sorted: boolean;\n` +
+                    `${indentation} unsorted: boolean;\n` +
+                    `${indentation} empty: boolean;\n` +
+                    '}\n\n';
+        return pageBody;
+    }
+
     generateServiceBody(): string{
         const {indentation} = this;
         let serviceBody = '\n';
@@ -123,8 +160,51 @@ export class JsonConverterAngular{
     generateServiceMethods(): string{
         const {indentation,name} = this;
         const endpointName = name.replace('Model','').replace(/([a-zA-Z])(?=[A-Z])/g, '$1-').toLowerCase();
-        return `${indentation}\nfindAll(): Observable<${name}[]>{\n` +
-               `${indentation}${indentation}return this.http.get<${name}[]>(\`\${environment.apiEndpoint}/${endpointName}\`);\n` +
+
+        const body = JSON.parse(this.entity.json);
+        let properties = Object.keys(body);
+        
+        let findAllParams = '{';
+        properties = properties.filter(property => property !== 'id');
+        properties.forEach((property, index) => {
+            const type = this.getType(property,body,false);
+            const typeIsObject = type !== 'String' && type[0].toUpperCase() == type[0];
+            if(!typeIsObject){
+                findAllParams += `${property}, `;
+                
+            }
+        });
+        if(findAllParams !== '{'){
+            findAllParams += `}: ${name},`;
+        }else{
+            findAllParams = '';
+        }
+        findAllParams += `page: number = null, size: number = null`;
+
+        let filters = '';
+        properties.forEach((property, index) => {
+            const type = this.getType(property,body,false);
+            const typeIsObject = type !== 'String' && type[0].toUpperCase() == type[0];
+            if(!typeIsObject){
+                filters += `${indentation}${indentation}if(${property} != null){\n` +
+                           `${indentation}${indentation}${indentation}filters += \`${property}=\${${property}}&\`;\n` +
+                           `${indentation}${indentation}}\n\n`;
+            }
+        });
+
+        filters += `${indentation}${indentation}if(page != null){\n` +
+                   `${indentation}${indentation}${indentation}filters += 'page=\$page&';\n` +
+                   `${indentation}${indentation}}\n\n`;
+
+        filters += `${indentation}${indentation}if(size != null){\n` +
+                    `${indentation}${indentation}${indentation}filters += 'size=\$size&';\n` +
+                    `${indentation}${indentation}}\n\n`;
+
+        return `${indentation}\nfindAll(${findAllParams}): Observable<Page<${name}>>{\n` +
+               `${indentation}${indentation}let filters = '?';\n` +
+               `${filters}` +
+               `${indentation}${indentation}filters = filters.substring(0, filters.length -1);\n` +
+               `${indentation}${indentation}return this.http.get<Page<${name}>>(\`\${environment.apiEndpoint}/${endpointName}\${filters}\`);\n` +
                `${indentation}}\n` + 
                `${indentation}\nfindById(id: number): Observable<${name}>{\n` +
                `${indentation}${indentation}return this.http.get<${name}>(\`\${environment.apiEndpoint}/${endpointName}/\${id}\`);\n` +

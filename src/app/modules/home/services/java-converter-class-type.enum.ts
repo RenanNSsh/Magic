@@ -2,5 +2,6 @@ export enum JavaConverterClassType{
     Model,
     Service,
     Controller,
-    Repository
+    Repository,
+    Specification
 }

@@ -51,6 +51,8 @@ export class JsonConverterJava{
                 return '@RestController\n' +
                        '@CrossOrigin()\n' +
                        `@RequestMapping(value="/${route}")\n`;
+            default:
+                return '\n';
         }
     }
 
@@ -62,7 +64,7 @@ export class JsonConverterJava{
                 
                 const className = label.replace('Repository', '') + 'Model';
                 this.packages += `import ${basePackage}.model.${className}; \n\n`;
-                return ` extends JpaRepository<${className},Integer>`;
+                return ` extends JpaRepository<${className},Integer>, JpaSpecificationExecutor<${className}>`;
             default: 
                 return '';
         }
@@ -93,11 +95,92 @@ export class JsonConverterJava{
                `${indentation}private ${className} service;`
     }
 
-    
 
-    private generateControllerMethods(indentation: string, label: string, basepackage: string): string{
+    private generateRepositoryMethods(indentation: string, label: string, basepackage: string, obj: Object): string{
+        const className = label.replace(new RegExp('Repository$'), 'Model');
+        this.packages += `import ${basepackage}.model.${className};\n\n`;
+
+        return ``;
+    }
+
+    private generateSpecificationMethods(indentation: string, label: string, basepackage: string, obj: Object): string{
+        const className = label.replace(new RegExp('Specification$'), 'Model');
+        this.packages += `import ${basepackage}.model.${className};\n\n`;
+        const keys = Object.keys(obj);
+        const keysWithTypes = this.getKeysWithTypes(keys, obj);
+
+        let methods = '';
+        
+
+        keys.forEach((key) => {
+            const keyWithType = this.getKeyWithType(key, obj[key]);
+            if(key.toLowerCase() !== 'id'){
+                methods += `${indentation}public static Specification<${className}> ${key}(${keyWithType}){\n` +
+                           `${indentation}${indentation}return (root, criteriaQuery, criteriaBuilder) ->\n` +  
+                           `${indentation}${indentation}${indentation}criteriaBuilder.${keyWithType.includes('String') ? 'like' : 'equal'}(root.get("${key}"), ${key});\n` +  
+                           `${indentation}}\n`; 
+
+            }
+        });
+
+
+        return `${methods}`;
+    }
+
+    private getKeysWithTypes(keys: string[], obj: Object): string{
+        let keysWithTypes = '';
+        keys.forEach((key, index)=> {
+            keysWithTypes += this.getKeyWithType(key, obj[key]);
+            if(index != keys.length -1){
+                keysWithTypes+= ','; 
+            }
+        
+        });
+        return keysWithTypes;
+    }
+
+    private getKeyWithType(key: string, value: any): string{
+        const type = this.getJavaType(key, value);
+        return `${type} ${key}`;
+    }
+
+    private getJavaType(propertyName: string, property: any): string{
+        switch(typeof property){
+            case 'boolean':
+                return  `Boolean`;
+            case 'string':
+                return `String`;
+            case 'number':
+                if(property.toString().includes('.')){
+                    return `Double`;
+                }
+                return `Integer`;
+            case 'object':
+                if(!Array.isArray(property))
+                    return `${propertyName.toUpperCase() + propertyName.slice(1) + 'Model'}`;
+                return `List<${this.getJavaType(propertyName, property[0])}>`
+        }
+        return '';
+    }
+
+    private getControllerKeysParams(keys :string[], obj: Object){
+        let keysWithTypes = '';
+        keys.forEach((key, index)=> {
+            keysWithTypes += `@RequestParam(required=false) ${this.getKeyWithType(key, obj[key])}`;
+            if(index != keys.length -1){
+                keysWithTypes+= ','; 
+            }
+        
+        });
+        return keysWithTypes;
+    }
+
+    private generateControllerMethods(indentation: string, label: string, basepackage: string, obj: Object): string{
         const className = label.replace(new RegExp('Controller$'), 'Model');
         this.packages += `import ${basepackage}.model.${className};\n\n`;
+
+        const keys = Object.keys(obj);
+        const keysWithTypes = this.getControllerKeysParams(keys, obj);
 
         return `\n${indentation}@PostMapping\n`+ // insert
                `${indentation}public ResponseEntity<${className}> insert(@Valid @RequestBody ${className} model){\n` +
@@ -119,8 +202,8 @@ export class JsonConverterJava{
                `${indentation}${indentation}return ResponseEntity.ok().body(model);\n` +
                `${indentation}};\n\n` +
                `${indentation}@GetMapping\n`+
-               `${indentation}public ResponseEntity<List<${className}>> findAll(){\n` + 
-               `${indentation}${indentation}return ResponseEntity.ok().body(service.findAll());\n` +
+               `${indentation}public ResponseEntity<Page<${className}>> findPaginated(${keysWithTypes}, Pageable pageable){\n` + 
+               `${indentation}${indentation}return ResponseEntity.ok().body(service.findPaginated(${keys.join(', ').replace('id,','')}, pageable));\n` +
                `${indentation}};\n\n` +
                `${indentation}@PutMapping("/{id}")\n`+
                `${indentation}public ResponseEntity<${className}> update(@PathVariable Integer id, @RequestBody ${className} model){\n` + // findById
@@ -129,41 +212,106 @@ export class JsonConverterJava{
                `${indentation}};\n\n`
     }
 
+    private getSpecificationFindAllService(keys: string[], className: string): string{
+        let specificationFindAll = '';
+        keys.forEach((key, index) => {
+            if(key.toLowerCase() !== 'id'){
+                let specification = `${className}Specification.${key}(${key})`;
+                if(specificationFindAll === ''){
+                    specificationFindAll += `Specification.where(${specification})`;
+                }else{
+                    specificationFindAll += `.or(${specification})`;
+                }
+            }
+        });
+        return specificationFindAll;
+    }
 
-    private generateServiceMethods(indentation: string, label: string, basepackage: string): string{
-        const className = label.replace(new RegExp('Service$'), 'Model');
-        this.packages += `import ${basepackage}.model.${className};\n\n`;
+
+    private generateServiceMethods(indentation: string, label: string, basepackage: string, obj: Object): string{
+        const className = label.replace(new RegExp('Service$'), '');
+        this.packages += `import ${basepackage}.model.${className}Model;\n` +
+                         `import  ${basepackage}.specification.${className}Specification;\n\n`;
+
+        
+        const keys = Object.keys(obj);
+
+        const classNameModel = className + 'Model';
+
 
         return `\n${indentation}@Transactional\n`+ // insert
-               `${indentation}public ${className} insert(${className} model){\n` +
+               `${indentation}public ${classNameModel} insert(${classNameModel} model){\n` +
                `${indentation}${indentation}model.setId(null);\n` +
                `${indentation}${indentation}return repository.save(model);\n` +
-               `${indentation}};\n\n` +
-               `${indentation}public ${className} delete(Integer id){\n` + // delete
-               `${indentation}${indentation}${className} model = findById(id);\n` +
+               `${indentation}}\n\n` +
+               `${indentation}public ${classNameModel} delete(Integer id){\n` + // delete
+               `${indentation}${indentation}${classNameModel} model = findById(id);\n` +
                `${indentation}${indentation}repository.deleteById(id);\n` +
                `${indentation}${indentation}return model;\n` +
-               `${indentation}};\n\n` + 
-               `${indentation}public ${className} findById(Integer id){\n` + // findById
-               `${indentation}${indentation}Optional<${className}> model = repository.findById(id);\n` +
+               `${indentation}}\n\n` + 
+               `${indentation}public ${classNameModel} findById(Integer id){\n` + // findById
+               `${indentation}${indentation}Optional<${classNameModel}> model = repository.findById(id);\n` +
                `${indentation}${indentation}return model.orElseThrow(()-> new ObjectNotFoundException(\n` +
-			   `${indentation}${indentation}${indentation}${indentation}"Objeto não encontrado! Id: " + id + ", Tipo: " + ${className}.class.getName()));\n` +
-               `${indentation}};\n\n` +
-               `${indentation}public List<${className}> findAll(){\n` + // findById
-               `${indentation}${indentation}return repository.findAll();\n` +
-               `${indentation}};\n\n` +
-               `${indentation}public ${className} update(${className} model, Integer id){\n` + // findById
+			   `${indentation}${indentation}${indentation}${indentation}"Objeto não encontrado! Id: " + id + ", Tipo: " + ${classNameModel}.class.getName()));\n` +
+               `${indentation}}\n\n` +
+               `${indentation}public Page<${classNameModel}> findPaginated(${this.getKeysWithTypes(keys, obj).replace('Integer id,','')}, Pageable pageable){\n` + // findById
+               `${indentation}${indentation}${this.generateServiceFindAll(keys, indentation, className)}\n` +
+               `${indentation}}\n\n` +
+               `${indentation}public ${classNameModel} update(${classNameModel} model, Integer id){\n` + // findById
                `${indentation}${indentation}model.setId(id);\n` +
-               `${indentation}${indentation}${className} modelUpdated = repository.save(model);\n` +
+               `${indentation}${indentation}${classNameModel} modelUpdated = repository.save(model);\n` +
                `${indentation}${indentation}return modelUpdated;\n` +
-               `${indentation}};\n\n`
+               `${indentation}}\n\n`
     }
 
-    private serviceClassBody(indentation, label: string, basepackage: string): string{
-        return `\n${this.generateServiceProperties(indentation,label, basepackage)}\n${this.generateServiceMethods(indentation,label,basepackage)}`;
+    private generateServiceFindAll(keys: string[], indentation: string, className: string): string{
+        let serviceFindAll = `if(`;
+        keys = keys.filter(key => key !== 'id');
+        keys.forEach((key, index) =>{
+            serviceFindAll += `${key} == null`;
+            if(index !== keys.length -1){
+                serviceFindAll += ` && `;
+            }else{
+                serviceFindAll += '){\n' +
+                                  `${indentation}${indentation}${indentation}return repository.findAll(pageable);\n` +
+                                  `${indentation}${indentation}}\n`;
+            }
+        });
+
+        serviceFindAll+= `${indentation}${indentation}Specification<${className}Model> specification = null;\n`;
+        keys.forEach((key, index) =>{
+            serviceFindAll     += `${indentation}${indentation}if(${key} != null){\n`;
+            if(index !== 0){
+                serviceFindAll += `${indentation}${indentation}${indentation}if(specification == null){\n`;
+            }
+            serviceFindAll     += `${indentation}${indentation}${indentation}${indentation}specification = Specification.where(${className}Specification.${key}(${key}));\n`;
+            if(index !== 0){
+                serviceFindAll += `${indentation}${indentation}${indentation}}else{\n`;
+                serviceFindAll += `${indentation}${indentation}${indentation}${indentation}specification = specification.and(${className}Specification.${key}(${key}));\n`;
+                serviceFindAll += `${indentation}${indentation}${indentation}}\n`;
+            }
+            serviceFindAll     += `${indentation}${indentation}}\n\n`;
+        });
+        serviceFindAll         += `${indentation}${indentation}return repository.findAll(specification, pageable);`;
+        
+        return serviceFindAll;
     }
-    private controllerClassBody(indentation, label: string, basepackage: string): string{
-        return `\n${this.generateControllerProperties(indentation,label, basepackage)}\n${this.generateControllerMethods(indentation,label,basepackage)}`;
+
+    private serviceClassBody(indentation, label: string, basepackage: string, obj: Object): string{
+        return `\n${this.generateServiceProperties(indentation,label, basepackage)}\n${this.generateServiceMethods(indentation,label,basepackage,obj)}`;
+    }
+
+    private repositoryClassBody(indentation, label: string, basepackage: string, obj: Object): string{
+        return `\n${this.generateRepositoryMethods(indentation,label,basepackage,obj)}`;
+
+    }
+
+    private controllerClassBody(indentation, label: string, basepackage: string, obj: Object): string{
+        return `\n${this.generateControllerProperties(indentation,label, basepackage)}\n${this.generateControllerMethods(indentation,label,basepackage,obj)}`;
+    }
+
+    private specificationClassBody(indentation, label: string, basepackage: string, obj: Object): string{
+        return `\n${this.generateSpecificationMethods(indentation,label,basepackage,obj)}`;
     }
 
     private createClass(obj, label, indentation, type: JavaConverterClassType, basePackage: string, zip: JSZip, relationships:RelationshipField[] = null) {
@@ -175,10 +323,16 @@ export class JsonConverterJava{
                 classText = classText + this.parser(obj, indentation,type, label,basePackage,zip,relationships) + '\n}';
                 break;
             case JavaConverterClassType.Service:
-                classText += this.serviceClassBody(indentation, label, basePackage) + '\n}';
+                classText += this.serviceClassBody(indentation, label, basePackage, obj) + '\n}';
+                break;
+            case JavaConverterClassType.Repository:
+                classText += this.repositoryClassBody(indentation, label, basePackage, obj) + '\n}';
+                break;
+            case JavaConverterClassType.Specification:
+                classText += this.specificationClassBody(indentation, label, basePackage, obj) + '\n}';
                 break;
             case JavaConverterClassType.Controller:
-                classText += this.controllerClassBody(indentation, label, basePackage) + '\n';
+                classText += this.controllerClassBody(indentation, label, basePackage, obj) + '\n';
             default:
                 classText += '}';
                 break;
@@ -422,6 +576,12 @@ export class JsonConverterJava{
     private generateModelPackages(basePackage: string){
         this.packages = `package ${basePackage}.model;\n\n` +
                 'import javax.persistence.Entity;\n' +
+                'import javax.persistence.MapsId;\n' +
+                'import javax.persistence.OneToOne;\n' +
+                'import javax.persistence.OneToMany;\n' +
+                'import javax.persistence.ManyToMany;\n' +
+                'import javax.persistence.ManyToOne;\n' +
+                'import javax.persistence.CascadeType;\n' +
                 'import javax.persistence.Column;\n' +
                 'import javax.persistence.GeneratedValue;\n' +
                 'import javax.persistence.GenerationType;\n' + 
@@ -435,7 +595,10 @@ export class JsonConverterJava{
                 'import org.springframework.http.ResponseEntity;\n' +
                 'import java.net.URI;\n' +
                 'import javax.validation.Valid;\n' +
+                `import org.springframework.data.domain.Page;\n` +
+                `import org.springframework.data.domain.Pageable;\n` +
                 'import org.springframework.web.bind.annotation.CrossOrigin;\n' +
+                'import org.springframework.web.bind.annotation.RequestParam;\n' +
                 'import org.springframework.beans.factory.annotation.Autowired;\n' + 
                 'import org.springframework.web.bind.annotation.DeleteMapping;\n' +
                 'import org.springframework.web.bind.annotation.GetMapping;\n' + 
@@ -453,18 +616,30 @@ export class JsonConverterJava{
     private generateServicePackages(basePackage: string){
         this.packages = `package ${basePackage}.service;\n\n` +
                 `import ${basePackage}.service.exceptions.ObjectNotFoundException;\n` +
+                `import org.springframework.data.domain.Page;\n` +
+                `import org.springframework.data.domain.Pageable;\n` +
                 'import org.springframework.transaction.annotation.Transactional;\n' +
                 'import org.springframework.beans.factory.annotation.Autowired;\n' + 
                 'import org.springframework.stereotype.Service;\n' + 
                 'import java.util.Optional;\n' +
+                'import org.springframework.data.jpa.domain.Specification;\n' +
                 'import java.util.List;\n\n';
     }
 
     private generateRepositoryPackages(basePackage: string){
         this.packages = `package ${basePackage}.repository;\n\n` +
                 'import org.springframework.stereotype.Repository;\n' +
+                'import org.springframework.data.domain.Page;\n' +
+                'import org.springframework.data.domain.Pageable;\n' +
                 'import org.springframework.data.jpa.repository.JpaRepository;\n' +
                 'import org.springframework.data.jpa.repository.Query;\n' + 
+                'import org.springframework.data.jpa.repository.JpaSpecificationExecutor;\n' +
+                'import org.springframework.data.repository.query.Param;\n\n';
+    }
+
+    private generateSpecificationPackages(basePackage: string){
+        this.packages = `package ${basePackage}.specification;\n\n` +
+                'import org.springframework.data.jpa.domain.Specification;\n' +
                 'import org.springframework.data.repository.query.Param;\n\n';
     }
 
@@ -513,6 +688,19 @@ export class JsonConverterJava{
 
         packageFolder.file(`${name}.java`,`${this.packages}${entityConverted}`);
       }
+
+           
+      private generateSpecification(json: string, name: string, basePackage: string, zip: JSZip){
+        const folders = basePackage.replace(/\./g, '/');
+        name = name[0].toUpperCase() + name.slice(1) + 'Specification';
+        const packageFolder = zip.folder(`${folders}/specification`);
+
+        this.generateSpecificationPackages(basePackage);
+        const entityConverted = this.inernalJavaConverter(json, name,JavaConverterClassType.Specification,basePackage,zip);
+
+        packageFolder.file(`${name}.java`,`${this.packages}${entityConverted}`);
+      }
+    
     
 
 
@@ -523,5 +711,6 @@ export class JsonConverterJava{
         this.generateService(json, name, basePackage, zip);
         this.generateController(json, name, basePackage, zip);
         this.generateRepository(json, name, basePackage, zip);
+        this.generateSpecification(json, name, basePackage, zip);
     }
 }
