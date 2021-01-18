@@ -11,6 +11,7 @@ import {MatTableModule} from '@angular/material/table';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatSelectModule} from '@angular/material/select';
 import {MatTabsModule} from '@angular/material/tabs';
+import {MatDividerModule} from '@angular/material/divider';
 
 @NgModule({
   declarations: [],
@@ -26,7 +27,8 @@ import {MatTabsModule} from '@angular/material/tabs';
     MatTableModule,
     MatDialogModule,
     MatSelectModule,
-    MatTabsModule
+    MatTabsModule,
+    MatDividerModule
   ],
   exports: [
     MatIconModule,
@@ -39,7 +41,8 @@ import {MatTabsModule} from '@angular/material/tabs';
     MatTableModule,
     MatDialogModule,
     MatSelectModule,
-    MatTabsModule
+    MatTabsModule,
+    MatDividerModule
   ]
 })
 export class SharedModule { }

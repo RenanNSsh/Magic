@@ -23,9 +23,10 @@ export class JsonConverterService {
       this.toAngular(entity, entities, zip);
       this.toFlutter(entity, entities, zip,entity.appName);
     });
-
+    console.log(zip.files);
     zip.generateAsync({type:"blob"})
        .then(function(content) {
+            console.log(zip.files, zip);
            saveAs(content, "exception.zip");
        });
   }

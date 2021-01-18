@@ -1,6 +1,6 @@
 <div class="home-container">
     <div class="left-container">
-        <h1 class="text-title main-title">CRUD GENERATOR</h1>
+        <h1 class="text-title main-title">MAGIC GENERATOR</h1>
         <p>Com essa funcionalidade é gerado um CRUD completo em Spring Boot, com a possibilidade de gerar integrado com
             aplicação Angular e Flutter!</p>
         <h2 class="text-title">O que é gerado?</h2>
@@ -223,7 +223,121 @@
                         <textarea matInput [(ngModel)]="entityJson" cdkTextareaAutosize rows="3"></textarea>
                     </mat-form-field>
                     <button mat-stroked-button (click)="addJson()">
-                        <mat-icon>add</mat-icon> Adicionar
+                        <mat-icon>add</mat-icon> Adicionar Entidade
+                    </button>
+
+                </div>
+                <div class="generated-json">
+                    <table mat-table [dataSource]="entities" class="mat-elevation-z8">
+                        <ng-container matColumnDef="entity">
+                            <th mat-header-cell *matHeaderCellDef> Entidade </th>
+                            <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+                        </ng-container>
+
+                        <!-- Name Column -->
+                        <ng-container matColumnDef="actions">
+                            <th mat-header-cell *matHeaderCellDef> Ações </th>
+                            <td mat-cell *matCellDef="let element">
+                                <button mat-icon-button (click)="removeEntity(element)">
+                                    <mat-icon>
+                                        delete
+                                    </mat-icon>
+                                </button>
+                            </td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="generate-button">
+                <button mat-stroked-button class="stroked-primary-reverse" color="primary"
+                    (click)="generateJson()">Gerar</button>
+
+            </div>
+        </div>
+        <div class="generate-form" *ngIf="formMode">
+            <div class="form">
+
+                <div class="form-generate-json">
+                    <div class="form-generate-header">
+                        
+                        <div class="packages">
+                            <mat-form-field appearance="fill">
+                                <mat-label>Pacote Base</mat-label>
+                                <input matInput [(ngModel)]="entityBasePackage">
+                            </mat-form-field>
+                            <mat-form-field appearance="fill">
+                                <mat-label>Nome do APP</mat-label>
+                                <input matInput [(ngModel)]="appName">
+                            </mat-form-field>
+                        </div>
+                      
+                        
+                    </div>
+                    <div class="entity-divider divider">
+                        <mat-divider></mat-divider>
+                        <span>
+                            Entidade
+                        </span>    
+                        <mat-divider></mat-divider>
+                        
+                    </div>
+                    <mat-form-field appearance="fill">
+                        <mat-label>Nome da Entidade</mat-label>
+                        <input matInput [(ngModel)]="entityName" (keydown.space)="$event.preventDefault()">
+                    </mat-form-field>
+                    <div class="properties-divider divider">
+                        <mat-divider></mat-divider>
+                        <span>
+                            Propriedades
+                        </span>    
+                        <mat-divider></mat-divider>
+                        
+                    </div>
+                    
+                    <div class="properties-form">
+                        <div class="properties" *ngFor="let property of entityProperties; let i = index" [ngClass]="{'button-offset': entityProperties.length > 1 && i == 0}">
+                            <mat-form-field appearance="fill">
+                                <mat-label>Nome da Propriedade</mat-label>
+                                <input [disabled]="i === 0" matInput (keydown.space)="$event.preventDefault()" [(ngModel)]="property.name">
+                            </mat-form-field>
+                            <mat-form-field appearance="fill">
+                                <mat-label>Tipo</mat-label>
+                                <mat-select [disabled]="i === 0" [(ngModel)]="property.type">
+                                  <mat-option *ngFor="let propertyType of propertyTypes" [value]="propertyType.value">{{propertyType.label}}</mat-option>
+                                  <mat-option [value]="getObjectValue()">{{property.name | titlecase }}Model</mat-option>
+                                  <mat-option [value]="getListObjectValue()">List<{{property.name | titlecase }}Model></mat-option>
+                                </mat-select>
+                              </mat-form-field>
+                            <button mat-icon-button *ngIf="i !== 0" (click)="removeProperty(property)" class="remove-button"> 
+                                <mat-icon>delete_outline</mat-icon>
+                            </button>
+                        </div>
+                        <div class="properties" [ngClass]="{'button-offset': entityProperties.length > 1}">
+                            <mat-form-field appearance="fill">
+                                <mat-label>Nome da Propriedade</mat-label>
+                                <input [disabled]="!entityProperties.length" matInput (keydown.space)="$event.preventDefault()" [(ngModel)]="currentProperty.name">
+                            </mat-form-field>
+                            <mat-form-field appearance="fill">
+                                <mat-label>Tipo</mat-label>
+                                <mat-select [disabled]="!entityProperties.length" [(ngModel)]="currentProperty.type">
+                                  <mat-option *ngFor="let propertyType of propertyTypes" [value]="propertyType.value">{{propertyType.label}}</mat-option>
+                                  <mat-option [value]="getObjectValue()">{{currentProperty.name | titlecase }}Model</mat-option>
+                                  <mat-option [value]="getListObjectValue()">List<{{currentProperty.name | titlecase }}Model></mat-option>
+                                </mat-select>
+                              </mat-form-field>
+                        </div>
+                        <div class="property-btn">
+                            <button mat-stroked-button (click)="addProperty()" class="btn-dashed">
+                                <mat-icon>add</mat-icon> Adicionar Propriedade
+                            </button>
+                        </div>
+                    </div>
+                  
+                    <button mat-stroked-button (click)="addForm()">
+                        <mat-icon>add</mat-icon> Adicionar Entidade
                     </button>
 
                 </div>

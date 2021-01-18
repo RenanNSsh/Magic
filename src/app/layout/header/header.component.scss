@@ -1,5 +1,6 @@
 header{
     height: 10vh;
+    max-height: 75px;
     .magic-toolbar-spacer{
         flex: 1 1 auto;
     }
@@ -10,6 +11,7 @@ header{
     .toolbar-header{
         position: fixed;
         height: 10vh;
+        max-height: 75px;
     }
 
     .magic-icon{

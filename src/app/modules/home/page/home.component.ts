@@ -1,10 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { SelectField } from 'src/app/shared/models/select-field';
 import { ValidadeJsonStatus } from 'src/app/shared/models/validation-json-status';
 import { isArray } from 'util';
 import { DialogInvalidJsonComponent } from '../components/dialog-invalid-json/dialog-invalid-json.component';
 import { DialogRelationshipComponent } from '../components/dialog-relationship/dialog-relationship.component';
 import { EntityConvert } from '../models/entity-convert';
+import { EntityProperty } from '../models/entity-property';
+import { EntityPropertyType } from '../models/entity-property-type';
 import { Relationship, RelationshipField, RelationshipJSON } from '../models/relationship';
 import { JsonConverterService } from '../services/json-converter.service';
 
@@ -25,6 +28,28 @@ export class HomeComponent implements OnInit {
   displayedColumns: string[] = ['entity', 'actions'];
   invalidFields: string[] = [];
   relationshipFields: RelationshipField[] = []; 
+  
+  propertyTypes: SelectField<EntityPropertyType>[] = [ {
+    label: 'String',
+    value: EntityPropertyType.String
+  }, {
+    label:'Integer',
+    value: EntityPropertyType.Integer
+  }, {
+    label:'Double', 
+    value: EntityPropertyType.Double
+  }, {
+    label: 'DateTime',
+    value: EntityPropertyType.DateTime
+  }];
+
+  currentProperty: EntityProperty = {
+    name: 'id',
+    type: EntityPropertyType.Integer
+  };
+  entityProperties: EntityProperty[] = [];
+
+
 
   constructor(private jsonConverter: JsonConverterService, public dialog: MatDialog) { }
 
@@ -56,10 +81,17 @@ export class HomeComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe((result: RelationshipField[]) => {
-      console.log('The dialog was closed');
       this.relationshipFields = result;
       this.addJson();
     });
+  }
+
+  validateEntityForm(): boolean{
+    return true;
+  }
+
+  validCurrentProperty(): boolean{
+    return this.currentProperty && !!this.currentProperty.name && !!this.currentProperty.type;
   }
 
   validateRelationshipJSON(): ValidadeJsonStatus{
@@ -92,6 +124,14 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  getObjectValue():EntityPropertyType {
+    return EntityPropertyType.Object;
+  }
+
+  getListObjectValue(): EntityPropertyType{
+    return EntityPropertyType.ListObject;
+  }
+
   showAlertInvalidJson(){
     
     const dialogRef = this.dialog.open(DialogInvalidJsonComponent, {
@@ -114,19 +154,26 @@ export class HomeComponent implements OnInit {
       relationships: this.relationshipFields,
       appName: this.appName
     }];
-    console.log(this.entities);
     this.resetEntity();
   }
 
   resetEntity(): void{
     this.entityName = '';
     this.entityJson = '';
-    this.entityBasePackage = 'br.com.exception';
     this.relationshipFields = [];
+    this.entityProperties = [];
+    this.currentProperty = {
+      name: '',
+      type: null
+    };
   }
 
   validateEntity(): boolean{
     this.invalidFields = [];
+    if(!this.entityName){
+      this.showAlertInvalidJson();
+      return false;
+    }
     if(!this.relationshipFields.length){
       switch(this.validateRelationshipJSON()){
         case ValidadeJsonStatus.RelationshipInvalidated: 
@@ -146,6 +193,53 @@ export class HomeComponent implements OnInit {
 
   removeEntity(entity){
     this.entities = this.entities.filter(entityList => entityList != entity);
+  }
+
+  addProperty(){
+    this.entityProperties = [...this.entityProperties, this.currentProperty];
+    this.currentProperty =  {
+      name: '',
+      type: null
+    };
+  }
+
+  removeProperty(property: EntityProperty){
+    this.entityProperties = this.entityProperties.filter(entityProperty => entityProperty != property);
+  }
+
+  addForm(){
+    const entity = {};
+    for(let property of this.entityProperties){
+      entity[property.name] = this.getPropertyExample(property.type);
+    }
+
+    if(this.validCurrentProperty()){
+      entity[this.currentProperty.name] = this.getPropertyExample(this.currentProperty.type);
+    }
+
+    this.entityJson = JSON.stringify(entity);
+    this.addJson();
+  }
+
+  getPropertyExample(propertyType: EntityPropertyType): any{
+    switch(propertyType){
+      case EntityPropertyType.String:
+        return 'example';
+      case EntityPropertyType.Integer:
+        return 1;
+      case EntityPropertyType.Double:
+        return 1.1;
+      case EntityPropertyType.DateTime:
+        return '2020-09-10T05:55:19.276Z';
+      case EntityPropertyType.Object:
+        return {
+          id: 1
+        };
+      case EntityPropertyType.ListObject:
+        return [{
+          id: 1
+        }];
+    }
   }
 
 }

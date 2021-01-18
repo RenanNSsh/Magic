@@ -65,13 +65,48 @@
     ::ng-deep .mat-form-field-flex{
         box-shadow: 0px 5px 5px -3px rgba(0, 0, 0, 0.2), 0px 8px 10px 1px rgba(0, 0, 0, 0.14), 0px 3px 14px 2px rgba(0, 0, 0, 0.12);
     }
-    .generate-json{
         .form{
             display: flex;
             animation: slideInForm .5s;
             padding-top: 2rem;
-            .packages{
+            .properties{
+              .remove-button{
+                padding-bottom: 3.5rem;
+              }
+            }
+            .properties + .property-btn{
               display: flex;
+              justify-content: center;
+              margin-bottom: 1rem;
+            }
+            .button-offset{
+              padding-right: 40px;
+            }
+            .properties-form{
+              margin-top:2.5rem;
+            }
+            .divider{
+              mat-divider{
+                flex-grow: 1;
+                height: 1px;
+                border: none;
+                background-image: linear-gradient(to left, transparent, rgba(255,255,255,.12));
+            
+              }
+              mat-divider:last-child{
+                background-image: linear-gradient(to right, transparent, rgba(255,255,255,.12));
+              }
+              align-items: center;
+              display: flex;
+            }
+            .form-generate-header{
+              margin-bottom: 2rem;
+              display: flex;
+              flex-direction: column;
+            }
+            .packages,.properties{
+              display: flex;
+              align-items: center;
               mat-form-field{
                 flex-grow: 1;
               }
@@ -104,7 +139,7 @@
             }
         
         }
-    }
+    
 }
 
     
@@ -241,4 +276,7 @@ h2.text-title{
     }
   }
 
-  
+  .btn-dashed{
+    border-style: dashed;
+    border-radius: 50px;
+  }
