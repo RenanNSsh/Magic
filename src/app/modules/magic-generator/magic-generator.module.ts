@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { HomeRoutingModule } from './home-routing.module';
-import { HomeComponent } from './page/home.component';
+import { MagicGeneratorRoutingModule } from './magic-generator-routing.module';
+import { MagicGeneratorComponent } from './page/magic-generator.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { JsonConverterService } from './services/json-converter.service';
 import { DialogRelationshipComponent } from './components/dialog-relationship/dialog-relationship.component';
@@ -10,14 +10,14 @@ import { DialogInvalidJsonComponent } from './components/dialog-invalid-json/dia
 
 
 @NgModule({
-  declarations: [HomeComponent, DialogRelationshipComponent, DialogInvalidJsonComponent],
+  declarations: [MagicGeneratorComponent, DialogRelationshipComponent, DialogInvalidJsonComponent],
   imports: [
     CommonModule,
-    HomeRoutingModule,
+    MagicGeneratorRoutingModule,
     SharedModule,
   ],
   providers: [
     JsonConverterService
   ]
 })
-export class HomeModule { }
+export class MagicGeneratorModule { }

@@ -12,11 +12,11 @@ import { Relationship, RelationshipField, RelationshipJSON } from '../models/rel
 import { JsonConverterService } from '../services/json-converter.service';
 
 @Component({
-  selector: 'magic-home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  selector: 'magic-generator',
+  templateUrl: './magic-generator.component.html',
+  styleUrls: ['./magic-generator.component.scss']
 })
-export class HomeComponent implements OnInit {
+export class MagicGeneratorComponent implements OnInit {
 
   jsonMode = false;
   formMode = false;
