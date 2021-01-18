@@ -29,20 +29,6 @@ export class GenerateIconButtonsComponent implements OnInit {
   selectFlutterForm(): void{
     this.buttonFormSelected.emit(FormGenerateSelected.Flutter);
     this.formSelected = FormGenerateSelected.Flutter;
-  }
-  
-  canShowSpringForm(): boolean{
-    return this.formSelected == FormGenerateSelected.Spring;
-  }
-
-  canShowAngularForm(): boolean{
-    return this.formSelected === FormGenerateSelected.Angular;
-  }
-  
-  canShowFlutterForm(): boolean{
-    return this.formSelected === FormGenerateSelected.Flutter;
-  }
-
-  
+  }  
 
 }
