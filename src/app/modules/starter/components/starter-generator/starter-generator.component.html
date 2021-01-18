@@ -1,0 +1,13 @@
+<div class="generate-buttons">
+    <magic-generate-icon-buttons (buttonFormSelected)="changeFormSelected($event)"></magic-generate-icon-buttons>
+</div>
+<mat-divider></mat-divider>
+<magic-generate-spring-form *ngIf="canShowSpringForm()"></magic-generate-spring-form>
+<magic-generate-angular-form *ngIf="canShowAngularForm()"></magic-generate-angular-form>
+<magic-generate-flutter-form *ngIf="canShowFlutterForm()"></magic-generate-flutter-form>
+
+<mat-divider></mat-divider>
+<div class="generate-button">
+    <button mat-stroked-button class="stroked-primary-reverse" color="primary"
+        (click)="generateStarter()">Gerar</button>
+</div>
