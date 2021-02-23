@@ -6,6 +6,7 @@ import { EntityConvert } from '../models/entity-convert';
 import { RelationshipField } from '../models/relationship';
 import { JsonConverterAngular } from './json-converter-angular';
 import { JsonConverterFlutter } from './json-converter-flutter';
+import { HttpClient } from '@angular/common/http';
 
 
 @Injectable({
@@ -13,8 +14,11 @@ import { JsonConverterFlutter } from './json-converter-flutter';
 })
 export class JsonConverterService {
 
-  constructor() { }
+  constructor(private http: HttpClient) { }
 
+  convertApi(entities: EntityConvert[]){
+    return this.http.post('http://localhost:3000/converter', entities)
+  }
   
   convert(entities: EntityConvert[]){
     const zip = new JSZip();

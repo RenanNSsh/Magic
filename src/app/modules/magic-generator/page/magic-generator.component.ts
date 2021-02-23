@@ -188,7 +188,9 @@ export class MagicGeneratorComponent implements OnInit {
   }
 
   generateJson(){
-    this.jsonConverter.convert(this.entities);
+    this.jsonConverter.convertApi(this.entities).subscribe(res => {
+      console.log(res);
+    });
   }
 
   removeEntity(entity){
